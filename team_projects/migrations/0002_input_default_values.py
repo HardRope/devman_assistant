@@ -4,6 +4,8 @@ from django.db import migrations
 import random
 from datetime import date, time
 
+from team_projects.models import Timecode
+
 def test_values(apps, schema_editor):
     Mentor = apps.get_model('team_projects', 'Mentor')
     Student = apps.get_model('team_projects', 'Student')
@@ -36,12 +38,12 @@ def test_values(apps, schema_editor):
         student.save()
         students.append(student)
     
-    timecodes = list()
+    available_timecodes = list()
     for _ in ('18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00'):
         hour, minute = _.split(":")
         timecode = AvailableTimecode.objects.create(time=time(hour=int(hour), minute=int(minute)))
         timecode.save()
-        timecodes.append(timecode)
+        available_timecodes.append(timecode)
 
     project = Project.objects.create(
         title='DVMN TEST',
@@ -53,8 +55,17 @@ def test_values(apps, schema_editor):
         is_active=True
     )
     project.students.set(students)
-    project.available_timecodes.set(timecodes)
+    project.available_timecodes.set(available_timecodes)
     project.save()
+    
+    # Надо починить ошибку <class '__fake__.AvailableTimecode'>
+    # for _ in range(len(students)):
+    #     timecode = Timecode.objects.create(
+    #         timecode=available_timecodes[0],
+    #         project=project,
+    #         student=students[_]
+    #     )
+    #     timecode.save()
 
 class Migration(migrations.Migration):
 
