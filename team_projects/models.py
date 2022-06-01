@@ -1,3 +1,4 @@
+from tabnanny import verbose
 import uuid
 
 from django.core.validators import MinLengthValidator
@@ -32,6 +33,7 @@ class Student(models.Model):
         blank=True
     )
     
+
     def __str__(self):
         return f'{self.first_name} {self.last_name}'
 
@@ -54,7 +56,7 @@ class Project(models.Model):
         editable=False
     )
     title = models.CharField('Название проекта', max_length=50)
-    description = models.TextField('Описание проекта')
+    description = models.TextField('Описание проекта', blank=True)
     mentor = models.ForeignKey(
         'Mentor',
         verbose_name='Ментор',
@@ -66,14 +68,15 @@ class Project(models.Model):
     students = models.ManyToManyField(
         'Student',
         verbose_name='Участники',
-        related_name='projects'
+        related_name='projects',
     )
     
-    timecodes = models.ManyToManyField(
-        'Timecode',
+    available_timecodes = models.ManyToManyField(
+        'AvailableTimecode',
         verbose_name='Таймкоды созвона',
         related_name='projects',
     )
+
     is_active = models.BooleanField('Проект в процессе', default=True)
 
     def __str__(self):
@@ -93,8 +96,35 @@ class Group(models.Model):
         return f'{self.number} группа'
 
 
-class Timecode(models.Model):
+class AvailableTimecode(models.Model):
     time = models.TimeField('Время созвона')
 
     def __str__(self):
         return f'{self.time}'
+
+    def converted(self):
+        return self.time.hour * 60 + self.time.minute
+
+
+class Timecode(models.Model):
+    timecode = models.ForeignKey(
+        'AvailableTimecode',
+        verbose_name='Время созвона',
+        related_name='project_timecodes',
+        on_delete=models.CASCADE
+    )
+    project = models.ForeignKey(
+        'Project',
+        verbose_name='Проект',
+        related_name='timecodes',
+        on_delete=models.CASCADE
+    )
+    student = models.ForeignKey(
+        'Student',
+        verbose_name='Студент',
+        related_name='timecodes',
+        on_delete=models.PROTECT
+    )
+
+    def __str__(self):
+        return f'{self.project}: {self.student} - {self.timecode}'
