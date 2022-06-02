@@ -57,6 +57,7 @@ class Project(models.Model):
     )
     title = models.CharField('Название проекта', max_length=50)
     description = models.TextField('Описание проекта', blank=True)
+    briefing = models.URLField('Ссылка на бриф')
     mentor = models.ForeignKey(
         'Mentor',
         verbose_name='Ментор',
@@ -85,6 +86,12 @@ class Project(models.Model):
 
 class Group(models.Model):
     number = models.SmallIntegerField('Номер группы')
+    timecode = models.ForeignKey(
+        'AvailableTimecode',
+        verbose_name='Время созвона',
+        related_name='groups',
+        on_delete=models.CASCADE,
+    )
     project = models.ForeignKey(
         'Project',
         verbose_name='Проект',
