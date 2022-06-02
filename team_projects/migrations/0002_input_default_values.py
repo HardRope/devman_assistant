@@ -4,15 +4,13 @@ from django.db import migrations
 import random
 from datetime import date, time
 
-from team_projects.models import Timecode
-
 def test_values(apps, schema_editor):
     Mentor = apps.get_model('team_projects', 'Mentor')
     Student = apps.get_model('team_projects', 'Student')
     Level = apps.get_model('team_projects', 'Level')
     Project = apps.get_model('team_projects', 'Project')
-    Group = apps.get_model('team_projects', 'Group')
     AvailableTimecode = apps.get_model('team_projects', 'AvailableTimecode')
+    Timecode = apps.get_model('team_projects', 'Timecode')
     
     mentor = Mentor.objects.create(
         last_name='Осипов',
@@ -33,7 +31,7 @@ def test_values(apps, schema_editor):
             last_name=random.choice(("Иванов", "Петров", "Смирнов", "Сидоров")),
             first_name=random.choice(("Иван", "Петр", "Семен", "Сидр")),
             telegram_id=12345678,
-            level=random.choice(levels)
+            level=random.choice(levels),
         )
         student.save()
         students.append(student)
@@ -58,14 +56,13 @@ def test_values(apps, schema_editor):
     project.available_timecodes.set(available_timecodes)
     project.save()
     
-    # Надо починить ошибку <class '__fake__.AvailableTimecode'>
-    # for _ in range(len(students)):
-    #     timecode = Timecode.objects.create(
-    #         timecode=available_timecodes[0],
-    #         project=project,
-    #         student=students[_]
-    #     )
-    #     timecode.save()
+    for _ in range(len(students)):
+        timecode = Timecode.objects.create(
+            timecode=random.choice(available_timecodes),
+            project=project,
+            student=students[_],
+        )
+        timecode.save()
 
 class Migration(migrations.Migration):
 

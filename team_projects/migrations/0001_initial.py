@@ -50,7 +50,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('uuid', models.CharField(default=uuid.uuid1, editable=False, max_length=36, primary_key=True, serialize=False, unique=True, validators=[django.core.validators.MinLengthValidator(36)], verbose_name='id')),
                 ('title', models.CharField(max_length=50, verbose_name='Название проекта')),
-                ('description', models.TextField(verbose_name='Описание проекта')),
+                ('description', models.TextField(verbose_name='Описание проекта', blank=True)),
                 ('start_date', models.DateField(verbose_name='Дата начала проекта')),
                 ('finish_date', models.DateField(verbose_name='Дата окончания проекта')),
                 ('is_active', models.BooleanField(default=True, verbose_name='Проект в процессе')),
@@ -74,7 +74,7 @@ class Migration(migrations.Migration):
             name='Timecode',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('Student', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='timecodes', to='team_projects.student', verbose_name='Студент')),
+                ('student', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='timecodes', to='team_projects.student', verbose_name='Студент')),
                 ('project', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='timecodes', to='team_projects.project', verbose_name='Проект')),
                 ('timecode', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='project_timecodes', to='team_projects.availabletimecode', verbose_name='Время созвона')),
             ],
