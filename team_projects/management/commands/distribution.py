@@ -1,80 +1,83 @@
-from team_projects.models import AvailableTimecode, Level, Student, Group, Project, Timecode
-from django.db.models import Count
-import json
+from team_projects.models import Level, Project, Timecode
+
 
 PROJECT = Project.objects.all()[0]
 
-def get_sorted_timecodes(project: Project = PROJECT) -> dict:
-    students_timecodes = Timecode.objects.filter(project=project)
-    sorted_timecodes = dict()
-    for timecode in students_timecodes:
-        level = timecode.student.level.__str__()
-        time = timecode.timecode.converted()
-        if level not in sorted_timecodes:
-            sorted_timecodes.update({level: {}})
-        if time not in sorted_timecodes[level]:
-            sorted_timecodes[level].update({time: []})
-        
-        sorted_timecodes[level][time].append(timecode.student)
-    return sorted_timecodes
 
-
-def first_filter(level: Level, students: list, groups: list) -> list:
-    current_level = [student for student in students if student[1] == level]
-    if len(current_level) >= 3:
-        return current_level[:3]
-
-
-def test(project: Project = PROJECT):
+def sort_students(project: Project = PROJECT):
     available_timecodes = project.available_timecodes.all()
-    levels = Level.objects.all()
     students_timecodes = Timecode.objects.filter(project=project).order_by('timecode')
-    summary_timecode_data = list()
-    groups = list()
-    for timecode in students_timecodes:
-        summary_timecode_data.append(
-            (
-                timecode.timecode,
-                timecode.student.level,
-                timecode.student
-            )
-        )
-    print('NON GROUPED STUDENTS')
-    for student in summary_timecode_data:
-        print(student)
-    for timecode in available_timecodes:
-        students = [student for student in summary_timecode_data if student[0]==timecode]
-        for level in levels:
-            new_group = first_filter(level, students, groups)
-            if new_group is None:
-                continue
-            groups.append(new_group)
-            for student in new_group:
-                summary_timecode_data.remove(student)
-            break
     
-    for group in groups:
+    groups = {
+        timecode: {'level': None, 'students': []}
+        for timecode
+        in available_timecodes
+    }
+
+    assert isinstance(groups, dict) and len(groups) == len(available_timecodes)
+
+    students = {
+        student: [
+            timecode.timecode
+            for timecode
+            in students_timecodes
+            if timecode.student == student
+        ]
+        for student
+        in project.students.all()
+    }
+
+    for num, timecode in enumerate(available_timecodes):
+        if num < 3:
+            suitable_students = [
+                {'student': student, 'timecodes':timecodes}
+                for student, timecodes
+                in students.items()
+                if len(timecodes) == num + 1
+            ]
+        else:
+            suitable_students = [
+                {
+                    'student': student,
+                    'timecodes':timecodes
+                }
+                for student, timecodes
+                in students.items()
+            ]
+        
+        processed_students = list()
+        
+        for student in suitable_students:
+            group_level = groups[timecode]['level']
+            student_level = student['student'].level
+
+            if group_level is None and student_level.title != 'middle':
+                groups[timecode]['level'] = student_level
+
+            is_compatible = check_level_compatible(group_level, student_level)
+            in_group = len(groups[timecode]['students'])
+
+            if is_compatible and in_group < 3:
+                groups[timecode]['students'].append((student['student'], student_level.title))
+                processed_students.append(student['student'])
+        
+        for student in processed_students:
+            students.pop(student)
+
+    for timecode, info in groups.items():
         print('-' * 20)
-        for item in group:
-            print(item)
-    
-    print('NON GROUPED STUDENTS')
-    for student in summary_timecode_data:
-        print(student)
+        print(timecode)
+        print(info['level'])
+        print(info['students'])
 
+    print(f'\n{"-" * 20}\nUNSORTED STUDENTS')
+    for student in students:
+        print(student, student.level.title, students[student])
 
-def test2(project: Project = PROJECT):
-    available_timecodes = project.available_timecodes.all()
-    levels = Level.objects.all()
-    students_timecodes = Timecode.objects.filter(project=project).order_by('student')
-    
-    groups = dict()
-    for timecode in available_timecodes:
-        groups.update({timecode.converted: []})
-    
-    sorted_students
-
-
-
-def group_students(sorted_timecodes: dict = get_sorted_timecodes()):
-    pass
+def check_level_compatible(level1: Level, level2: Level) -> bool:
+    try:
+        if level1.id > level2.id:
+            level1, level2 = level2, level1
+        return (level2.id - level1.id) < 2
+    except AttributeError:
+        return True

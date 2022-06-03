@@ -26,6 +26,12 @@ def add_timecodes(apps, schema_editor):
             student=students[_],
         )
         timecode.save()
+        timecode, _ = Timecode.objects.get_or_create(
+            timecode=random.choice(available_timecodes),
+            project=project,
+            student=students[_],
+        )
+        timecode.save()
 
 class Migration(migrations.Migration):
 
