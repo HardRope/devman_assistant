@@ -4,4 +4,4 @@ class Command(BaseCommand):
     help = "Telegram bot"
 
     def handle(self, *args, **kwargs):
-        pass
+        # Бота сюда!
