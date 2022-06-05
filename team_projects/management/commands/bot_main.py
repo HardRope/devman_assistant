@@ -7,8 +7,8 @@ def start(update, context):
     '''Запуск бота, определение роли, вывод нужного меню'''
 
     students = ['@IlyaShirko',]
-    project_managers = ["@HardRope",]
-    admins = ["@PaSeRouS",]
+    project_managers = ["@PaSeRouS"]
+    admins = []
 
     user_name = update.effective_user.name
 
