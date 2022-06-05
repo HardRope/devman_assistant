@@ -5,10 +5,10 @@ from dotenv import load_dotenv
 from telegram.ext import CommandHandler, CallbackQueryHandler, Filters
 from telegram.ext import MessageHandler, Updater
 
-from .admin import admin_menu, generate_groups, request_time, send_info_to_students
-from .bot_main import start
-from .project_manager import get_commands, pm_menu
-from .student import call_pm, change_time, choose_time, leave, student_menu 
+from admin import admin_menu, generate_groups, request_time, send_info_to_students
+from bot_main import start
+from project_manager import get_commands, pm_menu
+from student import call_pm, change_time, choose_time, leave, student_menu
 
 
 class Command(BaseCommand):
