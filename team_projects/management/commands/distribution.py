@@ -318,7 +318,7 @@ def check_level_compatible(level1: Level, level2: Level) -> bool:
     except AttributeError:
         return True
 
-from .bot import ask_for_timecode
+# from .bot import ask_for_timecode
 def ask_for_extra_timecode(student: Student,
                            necessary_timecodes: list,
                            project: Project):
