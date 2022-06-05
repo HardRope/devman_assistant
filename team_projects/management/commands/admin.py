@@ -55,20 +55,20 @@ def request_time(update, context):
                 
 Дальнейшие корректировки невозможны.'''
 
-                            context.bot.send_message(
-                                text=message,
-                                chat_id=student.telegram_id
-                            )
+                    context.bot.send_message(
+                        text=message,
+                        chat_id=student.telegram_id
+                    )
 
                 except ProjectFinishedError:
                     message = f'''"{project}" завершен.
                 
 Дальнейшие корректировки невозможны.'''
                              
-                            context.bot.send_message(
-                                text=message,
-                                chat_id=student.telegram_id
-                            )
+                    context.bot.send_message(
+                        text=message,
+                        chat_id=student.telegram_id
+                    )
 
 
 def generate_groups(update, context):
