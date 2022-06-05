@@ -9,7 +9,7 @@ from .db_processing import get_timecodes_buttons
 PROJECT = Project.objects.all()[0]
 STUDENT = Student.objects.all()[0]
 
-def sort_students(project: Project = PROJECT):
+def first_attempt(project: Project = PROJECT):
     available_timecodes = project.available_timecodes.all()
     students_timecodes = Timecode.objects.filter(project=project).order_by('timecode')
     
@@ -82,7 +82,7 @@ def sort_students(project: Project = PROJECT):
         print(student, student.level.title, students[student])
 
 
-def attempt2(project: Project = PROJECT):
+def sort_students(project: Project = PROJECT):
     available_timecodes = project.available_timecodes.all()
     students_timecodes = Timecode.objects.filter(project=project).order_by('timecode')
     
@@ -150,32 +150,18 @@ def attempt2(project: Project = PROJECT):
     }
 
     if len(min_timecodes_senior) > groups_for_senior:
-        seniors_timecodes = []
-        for student, timecodes in seniors.items():
-            seniors_timecodes += timecodes
-        seniors_timecodes = Counter(seniors_timecodes)
+        seniors_timecodes = counter_timecodes(seniors)
 
         temp = dict()
         for student, timecode in min_timecodes_senior:
             temp.update({timecode: seniors_timecodes[timecode]})
 
-        sorted_seniors_timecodes = list()
-        for value in sorted(temp.values(), reverse=True):
-            for key in temp.keys():
-                if seniors_timecodes[key] == value:
-                    sorted_seniors_timecodes.append({key: value})
+        sorted_seniors_timecodes = sort_counter_timecodes_max2min(temp)
         senior_available_timecodes = sorted_seniors_timecodes[:groups_for_senior]
     else:
-        seniors_timecodes = []
-        for student, timecodes in seniors.items():
-            seniors_timecodes += timecodes
-        seniors_timecodes = Counter(seniors_timecodes)
-
-        sorted_seniors_timecodes = dict()
-        for value in sorted(seniors_timecodes.values(), reverse=True):
-            for key in seniors_timecodes.keys():
-                if seniors_timecodes[key] == value:
-                    sorted_seniors_timecodes[key] = value
+        сountered_timecodes = counter_timecodes(seniors)
+        sorted_seniors_timecodes = sort_counter_timecodes_max2min(сountered_timecodes)
+        
         senior_available_timecodes = list()
         for timecode, _ in sorted_seniors_timecodes.items():
             senior_available_timecodes.append(timecode)
@@ -192,7 +178,7 @@ def attempt2(project: Project = PROJECT):
     students.update(not_seniors)
     print(f'Unsorted students - ', len(students))
     students, groups = try_to_sort_unsorted(students, groups, project, all_students)
-
+    students, groups = try_to_replace_groups(students, groups, project, all_students)
     for timecode, info in groups.items():
         print('-' * 20)
         print(timecode)
@@ -202,6 +188,7 @@ def attempt2(project: Project = PROJECT):
     print(f'\n{"-" * 20}\nUNSORTED STUDENTS')
     for student in students:
         print(student, student.level.title, students[student])
+    return groups, students
 
 def try_to_sort_unsorted(students, groups, project, all_students):
     temporary_students = dict()
@@ -224,6 +211,53 @@ def try_to_sort_unsorted(students, groups, project, all_students):
     
 
     return students, groups
+
+def try_to_replace_groups(_students, _groups, project, all_students):
+    sorted_timecodes = sort_counter_timecodes_max2min(
+        counter_timecodes(_students)
+    )
+    groups = dict()
+    for group, info in _groups.items():
+        groups[group] = info
+
+    students = dict()
+    for student, info in students.items():
+        students[student] = info
+
+    temporary_students = dict()
+    for timecode, number in sorted_timecodes.items():
+        current_students = groups[timecode]['students']
+        if number <= len(current_students):
+            continue
+        for student in current_students:
+            temporary_students[student] = all_students[student]
+        groups[timecode]['students'].clear()
+        groups[timecode]['level'] = None
+    if not temporary_students:
+        return _students, _groups
+    available_timecodes = project.available_timecodes.all()
+    students, groups = sort_them(students, available_timecodes, groups)
+    students.update(temporary_students)
+    students, groups = sort_them(students, available_timecodes, groups)
+    if _students <= students:
+        return _students, _groups
+    else:
+        return students, groups
+
+
+def counter_timecodes(students: dict) -> Counter:
+    students_timecodes = []
+    for _, timecodes in students.items():
+        students_timecodes += timecodes
+    return Counter(students_timecodes)
+
+def sort_counter_timecodes_max2min(timecodes: dict) -> dict():
+    sorted_students_timecodes = dict()
+    for value in sorted(timecodes.values(), reverse=True):
+        for key in timecodes.keys():
+            if timecodes[key] == value:
+                sorted_students_timecodes[key] = value
+    return sorted_students_timecodes
 
 
 def sort_them(students, available_timecodes, groups):
@@ -284,10 +318,10 @@ def check_level_compatible(level1: Level, level2: Level) -> bool:
     except AttributeError:
         return True
 
-from .bot import ask_for_timecode
+
 def ask_for_extra_timecode(student: Student,
-                           necessary_timecodes: list(Timecode),
+                           necessary_timecodes: list,
                            project: Project):
     buttons = get_timecodes_buttons(student, project)
 
-    ask_for_timecode(student, necessary_timecodes, buttons)
+    #ask_for_timecode(student, necessary_timecodes, buttons)
