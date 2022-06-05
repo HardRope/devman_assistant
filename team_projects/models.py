@@ -1,4 +1,3 @@
-from tabnanny import verbose
 import uuid
 
 from django.core.validators import MinLengthValidator
@@ -77,6 +76,8 @@ class Project(models.Model):
         verbose_name='Таймкоды созвона',
         related_name='projects',
     )
+
+    groups_formed = models.BooleanField('Группы сформированы', default=False)
 
     is_active = models.BooleanField('Проект в процессе', default=True)
 

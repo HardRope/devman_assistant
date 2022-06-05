@@ -26,7 +26,7 @@ def test_values(apps, schema_editor):
         levels.append(level)
     
     students = list()
-    for _ in range(20):
+    for _ in range(18):
         student = Student.objects.create(
             last_name=random.choice(("Иванов", "Петров", "Смирнов", "Сидоров")),
             first_name=random.choice(("Иван", "Петр", "Семен", "Сидр")),
@@ -37,7 +37,7 @@ def test_values(apps, schema_editor):
         students.append(student)
     
     available_timecodes = list()
-    for _ in ('18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00'):
+    for _ in ('18:00', '18:30', '19:00', '19:30', '20:00', '20:30'):
         hour, minute = _.split(":")
         timecode = AvailableTimecode.objects.create(time=time(hour=int(hour), minute=int(minute)))
         timecode.save()
@@ -57,8 +57,20 @@ def test_values(apps, schema_editor):
     project.save()
     
     for _ in range(len(students)):
+        timecode1 = random.choice(('18:00', '19:00', '20:00'))
+        timecode2 = timecode1.replace('00', '30')
+        hour, minute = timecode1.split(':')
+        timecode1 = AvailableTimecode.objects.get(time=time(hour=int(hour), minute=int(minute)))
+        hour, minute = timecode2.split(':')
+        timecode2 = AvailableTimecode.objects.get(time=time(hour=int(hour), minute=int(minute)))
         timecode = Timecode.objects.create(
-            timecode=random.choice(available_timecodes),
+            timecode=timecode1,
+            project=project,
+            student=students[_],
+        )
+        timecode.save()
+        timecode = Timecode.objects.create(
+            timecode=timecode2,
             project=project,
             student=students[_],
         )
