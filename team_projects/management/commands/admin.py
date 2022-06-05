@@ -40,11 +40,9 @@ def request_time(update, context):
                         one_time_keyboard=True,
                     )
 
-                    message = dedent(
-                        f'''Привет, {student.first_name} {student.last_name}.
+                    message = f'''Привет, {student.first_name} {student.last_name}.
 Выбери удобное для тебя время для созвона во время проекта из представленных 
 ниже.'''
-                    )
 
                     context.bot.send_message(
                         text=message,

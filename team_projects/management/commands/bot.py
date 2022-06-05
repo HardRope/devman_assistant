@@ -9,7 +9,7 @@ from admin import admin_menu, generate_groups, request_time, send_info_to_studen
 from bot_main import start
 from project_manager import get_commands, pm_menu
 from student import call_pm, change_time, choose_time, leave, student_menu
-
+from team_projects.models import Student
 
 class Command(BaseCommand):
     help = "Telegram bot"
@@ -39,3 +39,32 @@ class Command(BaseCommand):
 
         updater.start_polling()
         updater.idle()
+
+    def ask_for_timecode(student: Student,
+                         necessary_timecodes: list,
+                         buttons: list):
+        row_buttons = []
+
+        for button in timecodes_buttons[student]:
+            row_buttons.append(button)
+
+            if len(row_buttons) == 2:
+                student_timecodes.append(row_buttons)
+                row_buttons = []
+
+            if row_buttons:
+                student_timecodes.append(row_buttons)
+
+            reply_markup = ReplyKeyboardMarkup (
+                keyboard=student_timecodes,
+                resize_keyboard=True,
+                one_time_keyboard=True,
+            )
+
+            message = f'Привет, {student.first_name} {student.last_name}.'
+
+            context.bot.send_message(
+                text=message,
+                chat_id=student.telegram_id,
+                reply_markup=reply_markup
+            )
