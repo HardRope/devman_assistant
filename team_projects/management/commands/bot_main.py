@@ -1,3 +1,5 @@
+import os
+
 from .admin import admin_menu
 from .project_manager import pm_menu
 from .student import student_menu
@@ -6,9 +8,9 @@ from .student import student_menu
 def start(update, context):
     '''Запуск бота, определение роли, вывод нужного меню'''
 
-    students = ['@IlyaShirko',]
-    project_managers = ["@PaSeRouS"]
-    admins = []
+    students = os.getenv("STUDENTS")
+    project_managers = os.getenv("PROJECT_MANAGERS")
+    admins = os.getenv("ADMINS")
 
     user_name = update.effective_user.name
 
