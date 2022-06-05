@@ -26,7 +26,7 @@ class ProjectFinishedError(Exception):
 
 
 def get_actual_projects() -> Project:
-    return Project.objects.all(is_active=True)
+    return Project.objects.all(is_actual=True)
 
 
 def get_project(uuid: str) -> Project:
