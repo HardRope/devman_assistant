@@ -125,11 +125,13 @@ def delete_timecode(timecode: Timecode) -> tuple():
     return timecode.delete()
 
 
-def confirm_groups(project, groups, students):
+def confirm_groups(project: Project,
+                   groups: dict,
+                   students: list) -> bool:
     if not project.is_active:
-        raise ProjectFinishedError(timecode.project)
+        raise ProjectFinishedError(project)
     elif project.groups_formed:
-        raise GroupCorrectionError(timecode.project)
+        raise GroupCorrectionError(project)
     # groups, students = sort_students(project)
     for timecode, group in groups.items():
         group_object, _ = Group.objects.get_or_create(
