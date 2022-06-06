@@ -26,7 +26,7 @@ class ProjectAdmin(admin.ModelAdmin):
 
 @admin.register(Group)
 class GroupAdmin(admin.ModelAdmin):
-    list_display = ('number', 'project')
+    list_display = ('project',)
 
 
 @admin.register(AvailableTimecode)
