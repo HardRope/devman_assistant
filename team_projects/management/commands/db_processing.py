@@ -1,7 +1,7 @@
 from datetime import time
 from textwrap import dedent
 from django.db.models.query import QuerySet
-from team_projects.models import AvailableTimecode, Group, Project, Student, Timecode
+from team_projects.models import AvailableTimecode, Group, Mentor, Project, Student, Timecode
 
 
 class GroupCorrectionError(Exception):
@@ -41,6 +41,23 @@ def get_student(telegram_id: int) -> Student:
     return Student.objects.get(telegram_id=telegram_id)
 
 
+def get_mentors() -> QuerySet:
+    return Mentor.objects.all()
+
+
+def get_students(project: Project = None) -> QuerySet:
+    if project:
+        return project.students.all()
+    else:
+        return Student.objects.all()
+
+
+def groups_formed_set(project: Project) -> bool:
+    project.groups_formed = True
+    project.save()
+    return project.groups_formed
+
+
 def get_timecodes_buttons(student: Student,
                           project: Project) -> dict():
     if not project.is_active:
@@ -70,6 +87,10 @@ def get_project_groups(project: Project) -> dict():
     for group in Group.objects.filter(project=project):
         groups[group] = group.students.all()
     return groups
+
+
+def get_current_student_group(student: Student, project: Project) -> Group:
+    return student.groups.get(project=project)
 
 
 def save_timecode(convenient_time: time,
@@ -102,4 +123,13 @@ def delete_timecode(timecode: Timecode) -> tuple():
     elif timecode.project.groups_formed:
         raise GroupCorrectionError(timecode.project)
     return timecode.delete()
-    
+
+
+def save_group(number: int,
+               timecode: AvailableTimecode,
+               project: Project):
+    pass
+
+
+def confirm_groups(project: Project):
+    pass
