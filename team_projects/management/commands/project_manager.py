@@ -9,8 +9,16 @@ def get_commands(update, context):
     for project in projects:
         groups = get_project_groups(project)
 
+        message = 'Проект: ' + project.title + '\n'
+
+        for group in groups:
+            message = message + group.timecode.__str__() + '\n'
+            for student in groups[group]:
+                message = message + student.__str__()
+                message = message + f' (Уровень: {student.level})\n'
+
     context.bot.send_message(
-        text='Список команд',
+        text=message,
         chat_id=update.effective_chat.id,
     )
 
