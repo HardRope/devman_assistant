@@ -2,10 +2,12 @@ import os
 from textwrap import dedent
 from time import strptime
 
+from django.core.exceptions import ObjectDoesNotExist
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup
 
 from .db_processing import get_actual_projects, get_participants, get_timecodes_buttons 
 from .db_processing import confirm_groups, get_current_timecodes, save_timecode
+from .db_processing import get_current_student_group
 from .db_processing import GroupCorrectionError, ProjectFinishedError
 from .distribution import sort_students
 
@@ -42,8 +44,9 @@ def request_time(update, context):
                         one_time_keyboard=True,
                     )
 
-                    message = f'''Привет, {student.first_name} {student.last_name}.
-Выбери удобное для тебя время для созвона во время проекта из представленных ниже.'''
+                    message = f'Привет, {student.first_name} {student.last_name}.\n'
+                    message = message + 'Выбери удобное для тебя время для созвона'
+                    message = message + 'во время проекта из представленных ниже.'
                     
                     context.bot.send_message(
                         text=message,
@@ -52,9 +55,8 @@ def request_time(update, context):
                     )
 
                 except GroupCorrectionError:
-                    message = f'''Группы в проекте "{project}" уже сформированы.
-                
-Дальнейшие корректировки невозможны.'''
+                    message = f'Группы в проекте "{project}" уже сформированы.'
+                    message = message + 'Дальнейшие корректировки невозможны.'
 
                     context.bot.send_message(
                         text=message,
@@ -62,9 +64,8 @@ def request_time(update, context):
                     )
 
                 except ProjectFinishedError:
-                    message = f'''"{project}" завершен.
-                
-Дальнейшие корректировки невозможны.'''
+                    message = f'"{project}" завершен.'
+                    message = message + 'Дальнейшие корректировки невозможны.'
                              
                     context.bot.send_message(
                         text=message,
@@ -83,9 +84,11 @@ def generate_groups(update, context):
 
         for student in students:
             if not get_current_timecodes(student, project) and students_no_time == False:
+                message = 'Не все ученики выбрали время!'
+                message = message + 'Запросите время у учеников ещё раз.'
+
                 context.bot.send_message(
-                    text='''Не все ученики выбрали время! 
-Запросите время у учеников ещё раз.''',
+                    text=message,
                     chat_id=update.effective_chat.id,
                 )
 
@@ -129,26 +132,69 @@ def send_info_to_students(update, context):
 
     for project in projects:
         students = get_participants(project)
+        
+        for student in students:
+            try:
+                group = get_current_student_group(student, project)
 
-        context.bot.send_message(
-            text='Рассылка',
-            chat_id=update.effective_chat.id,
-        )
+                message = 'Привет! Созвон с командой будет в '
+                message = message + group.timecode.__str__() + '.\n\n'
+                message = message + 'Вот описание проекта: '
+                message = message + project.briefing
+
+                context.bot.send_message(
+                    text=message,
+                    chat_id=student.telegram_id,
+                )
+            except ObjectDoesNotExist:
+                continue
 
 
 def admin_confirm_groups(update, context):
-    '''оздаёт группы после подтверждения'''
-    projects = get_actual_projects()
+    '''Создаёт группы после подтверждения'''
+    try:
+        projects = get_actual_projects()
 
-    for project in projects:
-        groups, students = sort_students(project)
-        confirm_groups(project, groups, students)
-        # print('2')
+        for project in projects:
+            groups, students = sort_students(project)
+            if confirm_groups(project, groups, students):
+                keyboard = [
+                    [InlineKeyboardButton('Оповестить учеников', callback_data='admin_send_info')],
+                ]
 
-    context.bot.send_message(
-        text='Студенты расформированы по группам',
-        chat_id=update.effective_chat.id,
-    )
+                reply_markup = InlineKeyboardMarkup(keyboard)
+
+                context.bot.send_message(
+                    text='Студенты расформированы по группам',
+                    chat_id=update.effective_chat.id,
+                    reply_markup = reply_markup
+                )
+            else:
+                message = 'Сформировать группы не получилось\n'
+                message = message + 'Проверьте логи об ошибках'
+
+                context.bot.send_message(
+                    text=message,
+                    chat_id=update.effective_chat.id,
+                )
+
+    except GroupCorrectionError:
+        message = f'Группы в проекте "{project}" уже сформированы.\n'
+        message = message + 'Дальнейшие корректировки невозможны.'
+
+        context.bot.send_message(
+            text=message,
+            chat_id=student.telegram_id
+        )
+
+    except ProjectFinishedError:
+        message = f'"{project}" завершен.'
+        message = message + 'Дальнейшие корректировки невозможны.'
+                             
+        context.bot.send_message(
+            text=message,
+            chat_id=student.telegram_id
+        )
 
 
 def admin_menu(update, context):
@@ -203,18 +249,16 @@ def admin_menu(update, context):
                                 )
 
                     except GroupCorrectionError:
-                        message = f'''Группы в проекте "{project}" уже сформированы.
-            
-Дальнейшие корректировки невозможны.'''
+                        message = f'Группы в проекте "{project}" уже сформированы.'
+                        message = message + 'Дальнейшие корректировки невозможны.'
 
                         context.bot.send_message(
                             text=message,
                             chat_id=student.telegram_id
                         )
                     except ProjectFinishedError:
-                        message = f'''"{project}" завершен.
-            
-Дальнейшие корректировки невозможны.'''
+                        message = f'"{project}" завершен.'
+                        message = message + 'Дальнейшие корректировки невозможны.'
                          
                         context.bot.send_message(
                             text=message,
