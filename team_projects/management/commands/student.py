@@ -4,20 +4,20 @@ from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 
 from .db_processing import get_student
 
-def choose_time(update, context):
-    '''Генерирует кнопки с возможным временем созвона, возвращает список значений'''
-    context.bot.send_message(
-        text='Выбор времени',
-        chat_id=update.effective_chat.id,
-    )
-
-
-def change_time(update, context):
-    '''Очищает список возможного времени созвона, перенаправляет на choose_time'''
-    context.bot.send_message(
-        text='Изменение времени',
-        chat_id=update.effective_chat.id,
-    )
+# def choose_time(update, context):
+#     '''Генерирует кнопки с возможным временем созвона, возвращает список значений'''
+#     context.bot.send_message(
+#         text='Выбор времени',
+#         chat_id=update.effective_chat.id,
+#     )
+#
+#
+# def change_time(update, context):
+#     '''Очищает список возможного времени созвона, перенаправляет на choose_time'''
+#     context.bot.send_message(
+#         text='Изменение времени',
+#         chat_id=update.effective_chat.id,
+#     )
 
 
 def call_pm(update, context):
@@ -59,9 +59,9 @@ def leave(update, context):
 def student_menu(update, context):
     '''Вывод меню роли'''
     keyboard = [
-        [InlineKeyboardButton('Выбор времени созвона', callback_data='student_choose_time')],
-        [InlineKeyboardButton('Изменить выбранное время', callback_data='student_change_time')],
-        [InlineKeyboardButton('Написать проджект-менеджеру', callback_data='student_call_pm')],
+        # [InlineKeyboardButton('Выбор времени созвона', callback_data='student_choose_time')],
+        # [InlineKeyboardButton('Изменить выбранное время', callback_data='student_change_time')],
+        [InlineKeyboardButton('Связь с проект-менеджером', callback_data='student_call_pm')],
         [InlineKeyboardButton('Отказаться от участия', callback_data='student_leave')],
     ]
 

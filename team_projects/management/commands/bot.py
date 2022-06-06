@@ -34,8 +34,8 @@ class Command(BaseCommand):
         dispatcher.add_handler(CallbackQueryHandler(get_commands, pattern=r'pm_get_commands'))
 
         dispatcher.add_handler(MessageHandler(Filters.all, student_menu))
-        dispatcher.add_handler(CallbackQueryHandler(choose_time, pattern=r'student_choose_time'))
-        dispatcher.add_handler(CallbackQueryHandler(change_time, pattern=r'student_change_time'))
+        # dispatcher.add_handler(CallbackQueryHandler(choose_time, pattern=r'student_choose_time'))
+        # dispatcher.add_handler(CallbackQueryHandler(change_time, pattern=r'student_change_time'))
         dispatcher.add_handler(CallbackQueryHandler(call_pm, pattern=r'student_call_pm'))
         dispatcher.add_handler(CallbackQueryHandler(leave, pattern=r'student_leave'))
 
