@@ -143,4 +143,15 @@ def confirm_groups(project: Project,
             student.save
     available_timecodes = project.available_timecodes.all()
     return len(get_project_groups(project)) == len(available_timecodes)
-    
+
+
+def remove_student_from_project(project: Project, student: Student):
+    project.students.remove(student)
+    project.save()
+    timecodes = Timecode.objects.all(
+        project=project,
+        student=student
+    )
+    for timecode in timecodes:
+        timecode.delete()
+    return student not in get_students(project)
