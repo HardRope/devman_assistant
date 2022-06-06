@@ -9,7 +9,7 @@ from .admin import admin_menu, generate_groups, request_time, send_info_to_stude
 from .admin import admin_confirm_groups
 from .bot_main import start
 from .project_manager import get_commands, pm_menu
-from .student import call_pm, change_time, choose_time, leave, student_menu
+from .student import call_pm, leave, student_menu
 # from team_projects.models import Student
 
 class Command(BaseCommand):
