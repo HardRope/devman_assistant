@@ -100,7 +100,7 @@ class Group(models.Model):
     )
 
     def __str__(self):
-        return f'{self.number} группа'
+        return f'{self.timecode} from [{self.project}]'
 
 
 class AvailableTimecode(models.Model):
