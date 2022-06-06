@@ -1,6 +1,7 @@
 from datetime import time
 from textwrap import dedent
 from django.db.models.query import QuerySet
+from team_projects.management.commands.distribution import sort_students
 from team_projects.models import AvailableTimecode, Group, Mentor, Project, Student, Timecode
 
 
@@ -125,11 +126,16 @@ def delete_timecode(timecode: Timecode) -> tuple():
     return timecode.delete()
 
 
-def save_group(number: int,
-               timecode: AvailableTimecode,
-               project: Project):
-    pass
-
-
 def confirm_groups(project: Project):
-    pass
+    groups, students = sort_students(project)
+    for timecode, group in groups.items():
+        group_object, _ = Group.objects.get_or_create(
+            timecode=timecode,
+            project=project
+        )
+        for student in group['students']:
+            student.groups.add(group_object)
+            student.save
+    available_timecodes = project.available_timecodes.all()
+    return len(get_project_groups(project)) == len(available_timecodes)
+    

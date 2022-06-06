@@ -86,7 +86,6 @@ class Project(models.Model):
 
 
 class Group(models.Model):
-    number = models.SmallIntegerField('Номер группы')
     timecode = models.ForeignKey(
         'AvailableTimecode',
         verbose_name='Время созвона',
