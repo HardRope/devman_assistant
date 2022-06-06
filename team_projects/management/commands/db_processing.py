@@ -127,6 +127,10 @@ def delete_timecode(timecode: Timecode) -> tuple():
 
 
 def confirm_groups(project: Project):
+    if not timecode.project.is_active:
+        raise ProjectFinishedError(timecode.project)
+    elif timecode.project.groups_formed:
+        raise GroupCorrectionError(timecode.project)
     groups, students = sort_students(project)
     for timecode, group in groups.items():
         group_object, _ = Group.objects.get_or_create(
