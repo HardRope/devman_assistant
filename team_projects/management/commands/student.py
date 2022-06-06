@@ -1,4 +1,8 @@
+import os
+
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
+
+from .db_processing import get_student
 
 def choose_time(update, context):
     '''Генерирует кнопки с возможным временем созвона, возвращает список значений'''
@@ -17,18 +21,38 @@ def change_time(update, context):
 
 
 def call_pm(update, context):
-    '''Отправить сообщение проджект-менеджеру(?)'''
+    '''Отправить сообщение проджект-менеджеру'''
+
+    student = get_student(update.effective_chat.id)
+
+    projects = student.projects.all()
+    last_project = projects.last()
+
+    project_manager_id = last_project.mentor.telegram_id
+
     context.bot.send_message(
-        text='Клич о помощи',
+        text='Куратору отправлено сообщение, он свяжется с Вами, как только сможет',
         chat_id=update.effective_chat.id,
+    )
+
+    context.bot.send_message(
+        text=f'Ученик @{update.effective_chat.username} хочет с Вами связаться',
+        chat_id=project_manager_id,
     )
 
 
 def leave(update, context):
-    '''Покинуть распределение проектов на данной неделе (удаление ученика из бд?)'''
+    '''Отправка администратору сообщения об отказе от участия в проекте'''
+    admin = os.getenv("ADMINS")
+
     context.bot.send_message(
-        text='Отказ от участия',
+        text='Сообщение администратору отправлено',
         chat_id=update.effective_chat.id,
+    )
+
+    context.bot.send_message(
+        text=f'Cтудент @{update.effective_chat.username} хочет отказаться от участия в проекте',
+        chat_id=admin,
     )
 
 
