@@ -6,6 +6,7 @@ from telegram.ext import CommandHandler, CallbackQueryHandler, Filters
 from telegram.ext import MessageHandler, Updater
 
 from .admin import admin_menu, generate_groups, request_time, send_info_to_students
+from .admin import admin_confirm_groups
 from .bot_main import start
 from .project_manager import get_commands, pm_menu
 from .student import call_pm, change_time, choose_time, leave, student_menu
@@ -27,6 +28,7 @@ class Command(BaseCommand):
         dispatcher.add_handler(CallbackQueryHandler(request_time, pattern=r'admin_request_time'))
         dispatcher.add_handler(CallbackQueryHandler(generate_groups, pattern=r'admin_generate_groups'))
         dispatcher.add_handler(CallbackQueryHandler(send_info_to_students, pattern=r'admin_send_info'))
+        dispatcher.add_handler(CallbackQueryHandler(admin_confirm_groups, pattern=r'admin_confirm_groups'))
 
         dispatcher.add_handler(MessageHandler(Filters.all, pm_menu))
         dispatcher.add_handler(CallbackQueryHandler(get_commands, pattern=r'pm_get_commands'))

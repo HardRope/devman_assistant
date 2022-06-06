@@ -1,7 +1,6 @@
 from datetime import time
 from textwrap import dedent
 from django.db.models.query import QuerySet
-from team_projects.management.commands.distribution import sort_students
 from team_projects.models import AvailableTimecode, Group, Mentor, Project, Student, Timecode
 
 
@@ -126,12 +125,12 @@ def delete_timecode(timecode: Timecode) -> tuple():
     return timecode.delete()
 
 
-def confirm_groups(project: Project):
-    if not timecode.project.is_active:
+def confirm_groups(project, groups, students):
+    if not project.is_active:
         raise ProjectFinishedError(timecode.project)
-    elif timecode.project.groups_formed:
+    elif project.groups_formed:
         raise GroupCorrectionError(timecode.project)
-    groups, students = sort_students(project)
+    # groups, students = sort_students(project)
     for timecode, group in groups.items():
         group_object, _ = Group.objects.get_or_create(
             timecode=timecode,

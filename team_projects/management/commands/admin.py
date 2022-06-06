@@ -5,7 +5,7 @@ from time import strptime
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup
 
 from .db_processing import get_actual_projects, get_participants, get_timecodes_buttons 
-from .db_processing import save_timecode, get_current_timecodes
+from .db_processing import confirm_groups, get_current_timecodes, save_timecode
 from .db_processing import GroupCorrectionError, ProjectFinishedError
 from .distribution import sort_students
 
@@ -23,6 +23,7 @@ def request_time(update, context):
 
                 try:
                     timecodes_buttons = get_timecodes_buttons(student, project)
+                    
 
                     for button in timecodes_buttons[student]:
                         row_buttons.append(button)
@@ -31,9 +32,10 @@ def request_time(update, context):
                             student_timecodes.append(row_buttons)
                             row_buttons = []
 
+                    
                     if row_buttons:
                         student_timecodes.append(row_buttons)
-
+                    
                     reply_markup = ReplyKeyboardMarkup (
                         keyboard=student_timecodes,
                         resize_keyboard=True,
@@ -41,9 +43,8 @@ def request_time(update, context):
                     )
 
                     message = f'''Привет, {student.first_name} {student.last_name}.
-Выбери удобное для тебя время для созвона во время проекта из представленных 
-ниже.'''
-
+Выбери удобное для тебя время для созвона во время проекта из представленных ниже.'''
+                    
                     context.bot.send_message(
                         text=message,
                         chat_id=student.telegram_id,
@@ -91,18 +92,61 @@ def generate_groups(update, context):
                 students_no_time = True
 
         if students_no_time == False:
-            sort_students(project)
+            groups, students_out = sort_students(project)
+
+            message = 'Сформированные группы: \n'
+
+            for timecode in groups:
+                message = message + 'Время: ' + timecode.__str__() + '\n'
+                message = message + 'Уровень: '+ groups[timecode]['level'].__str__() + '\n'
+                message = message + 'Ученики: \n'
+
+                for student in groups[timecode]['students']:
+                    message = message + student.__str__() + '\n'
+
+                message = message + '\n'
+
+            message = message + 'Неотсортированные ученики' + '\n'
+            for student in students_out:
+                    message = message + student.__str__() + '\n'
+
+            keyboard = [
+                [InlineKeyboardButton('Подтвердить группы', callback_data='admin_confirm_groups')],
+            ]
+
+            reply_markup = InlineKeyboardMarkup(keyboard)
 
             context.bot.send_message(
-                    text='''Группы сформированы.''',
+                    text=message,
                     chat_id=update.effective_chat.id,
+                    reply_markup = reply_markup
                 )
 
 
 def send_info_to_students(update, context):
     '''Рассылает ученикам(кураторам?) информацию о группах, времени и дате(?) созвона'''
+    projects = get_actual_projects()
+
+    for project in projects:
+        students = get_participants(project)
+
+        context.bot.send_message(
+            text='Рассылка',
+            chat_id=update.effective_chat.id,
+        )
+
+
+def admin_confirm_groups(update, context):
+    '''оздаёт группы после подтверждения'''
+    projects = get_actual_projects()
+
+    for project in projects:
+        groups, students = sort_students(project)
+        confirm_groups(project, groups, students)
+        # print('2')
+
     context.bot.send_message(
-        text='Рассылка',
+        text='Студенты расформированы по группам',
         chat_id=update.effective_chat.id,
     )
 
@@ -112,7 +156,7 @@ def admin_menu(update, context):
     user_name = update.effective_user.name
     admins = os.getenv("ADMINS")
 
-    if user_name in admins:
+    if user_name in admins and update.message.text == '/start':
         keyboard = [
             [InlineKeyboardButton('Запрос времени у учеников', callback_data='admin_request_time')],
             [InlineKeyboardButton('Сформировать группы', callback_data='admin_generate_groups')],
