@@ -1,0 +1,1 @@
+web: gunicorn powerful-falls-47785.wsgi --log-file -
