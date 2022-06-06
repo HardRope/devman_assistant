@@ -32,9 +32,6 @@ def start(update, context):
         for mentor in mentors:
             mentors_id.append(mentor.telegram_id)
 
-    print(students_id)
-    print(mentors_id)
-
     if user_name in admins:
         admin_menu(update, context)
     elif user_id in mentors_id:
