@@ -1,14 +1,16 @@
-import os
-
 from .admin import admin_menu
 from .db_processing import get_actual_projects, get_mentors, get_participants
 from .project_manager import pm_menu
 from .student import student_menu
+from environs import Env
 
 
 def start(update, context):
     '''Запуск бота, определение роли, вывод нужного меню'''
-    admins = os.getenv("ADMINS")
+    env = Env()
+    env.read_env()
+
+    admins = env.list("ADMIN")
 
     user_name = update.effective_user.name
     user_id = update.effective_user.id
@@ -31,8 +33,8 @@ def start(update, context):
 
         for mentor in mentors:
             mentors_id.append(mentor.telegram_id)
-
-    if user_name in admins:
+    print(admins)
+    if str(user_id) in admins:
         admin_menu(update, context)
     elif user_id in mentors_id:
         pm_menu(update, context)

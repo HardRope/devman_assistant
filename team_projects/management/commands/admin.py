@@ -1,20 +1,24 @@
 import os
 from textwrap import dedent
-from time import strptime
 
 from django.core.exceptions import ObjectDoesNotExist
-from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup
+from telegram import (InlineKeyboardButton, InlineKeyboardMarkup,
+                      ReplyKeyboardMarkup)
 
-from .db_processing import get_actual_projects, get_participants, get_timecodes_buttons 
-from .db_processing import confirm_groups, get_current_timecodes, save_timecode
-from .db_processing import get_current_student_group
-from .db_processing import GroupCorrectionError, ProjectFinishedError
+from team_projects.models import AvailableTimecode
+
+from .db_processing import (GroupCorrectionError, ProjectFinishedError,
+                            confirm_groups, get_actual_projects, get_available_timecode,
+                            get_current_student_group, get_current_timecodes,
+                            get_participants, get_timecodes_buttons,
+                            save_timecode)
 from .distribution import sort_students
+
 
 def request_time(update, context):
     '''Отправляет запрос ученикам о необходимости выбрать время'''
     projects = get_actual_projects()
-
+    user_id = update.effective_user.id
     for project in projects:
         students = get_participants(project)
 
@@ -44,9 +48,13 @@ def request_time(update, context):
                         one_time_keyboard=True,
                     )
 
-                    message = f'Привет, {student.first_name} {student.last_name}.\n'
-                    message = message + 'Выбери удобное для тебя время для созвона'
-                    message = message + 'во время проекта из представленных ниже.'
+                    message = dedent(
+                        f"""
+                        Привет, {student.first_name}!
+
+                        Выбери удобное для тебя время для созвона из представленных ниже.
+                        """
+                    )
                     
                     context.bot.send_message(
                         text=message,
@@ -54,24 +62,12 @@ def request_time(update, context):
                         reply_markup=reply_markup
                     )
 
-                except GroupCorrectionError:
-                    message = f'Группы в проекте "{project}" уже сформированы.'
-                    message = message + 'Дальнейшие корректировки невозможны.'
+                except GroupCorrectionError as error:
+                    context.bot.send_message(text=error, chat_id=user_id)
 
-                    context.bot.send_message(
-                        text=message,
-                        chat_id=student.telegram_id
-                    )
-
-                except ProjectFinishedError:
-                    message = f'"{project}" завершен.'
-                    message = message + 'Дальнейшие корректировки невозможны.'
-                             
-                    context.bot.send_message(
-                        text=message,
-                        chat_id=student.telegram_id
-                    )
-
+                except ProjectFinishedError as error:
+                    context.bot.send_message(text=error, chat_id=user_id)
+                
 
 def generate_groups(update, context):
     '''Запускает формирование групп'''
@@ -84,9 +80,13 @@ def generate_groups(update, context):
 
         for student in students:
             if not get_current_timecodes(student, project) and students_no_time == False:
-                message = 'Не все ученики выбрали время!'
-                message = message + 'Запросите время у учеников ещё раз.'
-
+                message = dedent(
+                    """
+                    Не все ученики выбрали время!
+                    Запросите время у учеников ещё раз.
+                    """
+                )
+                
                 context.bot.send_message(
                     text=message,
                     chat_id=update.effective_chat.id,
@@ -97,24 +97,40 @@ def generate_groups(update, context):
         if students_no_time == False:
             groups, students_out = sort_students(project)
 
-            message = 'Сформированные группы: \n'
+            message = dedent(
+                """Сформированные группы:
+                """
+            )
 
             for timecode in groups:
-                message = message + 'Время: ' + timecode.__str__() + '\n'
-                message = message + 'Уровень: '+ groups[timecode]['level'].__str__() + '\n'
-                message = message + 'Ученики: \n'
-
+                message += dedent(
+                    f"""
+                    Время: {timecode.__str__()}
+                    Ученики:
+                    """
+                )
+                
                 for student in groups[timecode]['students']:
-                    message = message + student.__str__() + '\n'
+                    message += dedent(
+                        f"""{student} ({student.level})
+                        """
+                    )
 
-                message = message + '\n'
-
-            message = message + 'Неотсортированные ученики' + '\n'
+            message += dedent(
+                """
+                Неотсортированные ученики:
+                """
+            )
             for student in students_out:
-                    message = message + student.__str__() + '\n'
-
+                    message += dedent(
+                        f"""{student} ({student.level})
+                        """
+                    )
             keyboard = [
                 [InlineKeyboardButton('Подтвердить группы', callback_data='admin_confirm_groups')],
+                [InlineKeyboardButton('Запрос времени у учеников', callback_data='admin_request_time')],
+                [InlineKeyboardButton('Сформировать группы', callback_data='admin_generate_groups')],
+                [InlineKeyboardButton('Рассылка информации ученикам', callback_data='admin_send_info')],
             ]
 
             reply_markup = InlineKeyboardMarkup(keyboard)
@@ -137,11 +153,14 @@ def send_info_to_students(update, context):
             try:
                 group = get_current_student_group(student, project)
 
-                message = 'Привет! Созвон с командой будет в '
-                message = message + group.timecode.__str__() + '.\n\n'
-                message = message + 'Вот описание проекта: '
-                message = message + project.briefing
+                message = dedent(
+                    f"""
+                    Привет! Созвон с командой будет в {group.timecode}.
 
+                    Бриф проекта: {project.briefing}
+                    """
+                )
+                
                 context.bot.send_message(
                     text=message,
                     chat_id=student.telegram_id,
@@ -154,7 +173,7 @@ def admin_confirm_groups(update, context):
     '''Создаёт группы после подтверждения'''
     try:
         projects = get_actual_projects()
-
+        user_id = update.effective_user.id
         for project in projects:
             groups, students = sort_students(project)
             if confirm_groups(project, groups, students):
@@ -170,39 +189,30 @@ def admin_confirm_groups(update, context):
                     reply_markup = reply_markup
                 )
             else:
-                message = 'Сформировать группы не получилось\n'
-                message = message + 'Проверьте логи об ошибках'
+                message = dedent(
+                    """
+                    Сформировать группы не получилось.
+                    Проверьте логи об ошибках
+                    """
+                )
 
                 context.bot.send_message(
                     text=message,
                     chat_id=update.effective_chat.id,
                 )
 
-    except GroupCorrectionError:
-        message = f'Группы в проекте "{project}" уже сформированы.\n'
-        message = message + 'Дальнейшие корректировки невозможны.'
+    except GroupCorrectionError as error:
+        context.bot.send_message(text=error, chat_id=user_id)
 
-        context.bot.send_message(
-            text=message,
-            chat_id=student.telegram_id
-        )
-
-    except ProjectFinishedError:
-        message = f'"{project}" завершен.'
-        message = message + 'Дальнейшие корректировки невозможны.'
-                             
-        context.bot.send_message(
-            text=message,
-            chat_id=student.telegram_id
-        )
+    except ProjectFinishedError as error:
+        context.bot.send_message(text=error, chat_id=user_id)
 
 
 def admin_menu(update, context):
     '''Вывод меню роли'''
-    user_name = update.effective_user.name
-    admins = os.getenv("ADMINS")
-
-    if user_name in admins and update.message.text == '/start':
+    user_id = update.effective_user.id
+    admins = os.getenv("ADMIN")
+    if str(user_id) in admins and update.message.text == '/start':
         keyboard = [
             [InlineKeyboardButton('Запрос времени у учеников', callback_data='admin_request_time')],
             [InlineKeyboardButton('Сформировать группы', callback_data='admin_generate_groups')],
@@ -231,36 +241,31 @@ def admin_menu(update, context):
 
                         for button in timecodes_buttons[student]:
                             if button == update.message.text:
-                                timecode = save_timecode(
-                                    button[0:8],
+                                first_time = button.split(" - ")[0]
+                                hour, minute, _ = first_time.split(":")
+                                available_timecode = get_available_timecode(int(hour), int(minute))
+                                first_timecode = save_timecode(
+                                    available_timecode,
                                     student,
                                     project
                                 )
-                            
-                                if button[14] == '0':
-                                    convinient_time = button[0:2] + ':30:00'
-                                elif button[14] == '3':
-                                    convinient_time = button[11:13] + ':00:00'
-
-                                timecode = save_timecode(
-                                    convinient_time, 
+                                
+                                if minute == '30':
+                                    hour = int(hour) + 1
+                                    minute = 0
+                                else:
+                                    hour = int(hour)
+                                    minute = 30
+                                
+                                available_timecode = get_available_timecode(hour, minute)
+                                second_timecode = save_timecode(
+                                    available_timecode, 
                                     student, 
                                     project
                                 )
 
-                    except GroupCorrectionError:
-                        message = f'Группы в проекте "{project}" уже сформированы.'
-                        message = message + 'Дальнейшие корректировки невозможны.'
+                    except GroupCorrectionError as error:
+                        context.bot.send_message(text=error, chat_id=user_id)
 
-                        context.bot.send_message(
-                            text=message,
-                            chat_id=student.telegram_id
-                        )
-                    except ProjectFinishedError:
-                        message = f'"{project}" завершен.'
-                        message = message + 'Дальнейшие корректировки невозможны.'
-                         
-                        context.bot.send_message(
-                            text=message,
-                            chat_id=student.telegram_id
-                        )
+                    except ProjectFinishedError as error:
+                        context.bot.send_message(text=error, chat_id=user_id)
