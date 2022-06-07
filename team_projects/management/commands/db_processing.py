@@ -155,3 +155,7 @@ def remove_student_from_project(project: Project, student: Student):
     for timecode in timecodes:
         timecode.delete()
     return student not in get_students(project)
+
+
+def get_available_timecode(hour: int, minute: int) -> AvailableTimecode:
+    return AvailableTimecode.objects.get(time=time(hour=hour, minute=minute))
